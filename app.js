@@ -18,15 +18,26 @@ const quizData = {
     "E": { "2b": "F", "3b": "G", "4+": "A#", "5+": "C", "6b": "C#", "7b": "D" },
     "F": { "2b": "Gb", "3b": "Ab", "4+": "B", "5+": "C#", "6b": "Db", "7b": "Eb" },
     "G": { "2b": "Ab", "3b": "Bb", "4+": "C#", "5+": "D#", "6b": "Eb", "7b": "F" }
-    // Puoi ampliare con altre tonalità
   }
 };
 
+let questionSet = [];
+let currentQuestion = 0;
 let correctCount = 0;
 let incorrectCount = 0;
 
-function updateStats() {
-  document.getElementById("stats").innerHTML = `✅ Corrette: ${correctCount} | ❌ Errate: ${incorrectCount}`;
+function pickRandom(arr, count, exclude = []) {
+  const filtered = arr.filter(n => !exclude.includes(n));
+  const result = [];
+  while (result.length < count && filtered.length > 0) {
+    const rand = filtered.splice(Math.floor(Math.random() * filtered.length), 1)[0];
+    result.push(rand);
+  }
+  return result;
+}
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
 }
 
 function generateDegreeQuestion() {
@@ -35,18 +46,13 @@ function generateDegreeQuestion() {
   const degreeIndex = Math.floor(Math.random() * 7);
   const correct = quizData.scales[key][degreeIndex];
   const allNotes = Array.from(new Set(Object.values(quizData.scales).flat()));
-  const options = [correct];
-  while (options.length < 4) {
-    const rand = allNotes[Math.floor(Math.random() * allNotes.length)];
-    if (!options.includes(rand)) options.push(rand);
-  }
-  options.sort(() => Math.random() - 0.5);
+  const options = shuffle([correct, ...pickRandom(allNotes, 3, [correct])]);
 
   return {
     question: `Qual è il ${degreeIndex + 1}° grado della scala di ${key}?`,
     options,
     answer: correct,
-    explanation: `La ${degreeIndex + 1}ª nota della scala di ${key} è ${correct}.`
+    explanation: `Il ${degreeIndex + 1}° grado della scala di ${key} è ${correct}.`
   };
 }
 
@@ -57,32 +63,65 @@ function generateIntervalQuestion() {
   const interval = intervals[Math.floor(Math.random() * intervals.length)];
   const correct = quizData.alteredIntervals[key][interval];
   const allNotes = Array.from(new Set(Object.values(quizData.scales).flat()));
-  const options = [correct];
-  while (options.length < 4) {
-    const rand = allNotes[Math.floor(Math.random() * allNotes.length)];
-    if (!options.includes(rand)) options.push(rand);
-  }
-  options.sort(() => Math.random() - 0.5);
+  const options = shuffle([correct, ...pickRandom(allNotes, 3, [correct])]);
 
   return {
     question: `Qual è l’intervallo ${interval} partendo da ${key}?`,
     options,
     answer: correct,
-    explanation: `L’intervallo ${interval} partendo da ${key} è ${correct}.`
+    explanation: `L’intervallo ${interval} da ${key} è ${correct}.`
   };
 }
 
-function generateQuestion() {
-  const useDegree = Math.random() < 0.5;
-  return useDegree ? generateDegreeQuestion() : generateIntervalQuestion();
+function generateQuestionSet(n = 30) {
+  const set = [];
+  for (let i = 0; i < n; i++) {
+    const q = Math.random() < 0.5 ? generateDegreeQuestion() : generateIntervalQuestion();
+    set.push(q);
+  }
+  return set;
+}
+
+function startQuiz() {
+  questionSet = generateQuestionSet();
+  currentQuestion = 0;
+  correctCount = 0;
+  incorrectCount = 0;
+  document.getElementById("start-screen").style.display = "none";
+  document.getElementById("quiz-card").style.display = "block";
+  document.getElementById("end-screen").style.display = "none";
+  renderQuiz();
+}
+
+function endQuiz() {
+  document.getElementById("quiz-card").style.display = "none";
+  const final = document.getElementById("end-screen");
+  final.style.display = "block";
+  final.innerHTML = `
+    <h2>🎉 Quiz completato!</h2>
+    <p>✅ Corrette: ${correctCount}</p>
+    <p>❌ Errate: ${incorrectCount}</p>
+    <button onclick="restartQuiz()">Ricomincia</button>
+  `;
+}
+
+function restartQuiz() {
+  document.getElementById("end-screen").style.display = "none";
+  document.getElementById("start-screen").style.display = "block";
 }
 
 function renderQuiz() {
+  if (currentQuestion >= questionSet.length) {
+    endQuiz();
+    return;
+  }
+
   const container = document.getElementById("quiz-container");
   container.innerHTML = "";
-  updateStats();
+  document.getElementById("stats").textContent =
+    `Domanda ${currentQuestion + 1}/${questionSet.length} | ✅ ${correctCount} | ❌ ${incorrectCount}`;
 
-  const q = generateQuestion();
+  const q = questionSet[currentQuestion];
   const qEl = document.createElement("h2");
   qEl.textContent = q.question;
   container.appendChild(qEl);
@@ -92,24 +131,31 @@ function renderQuiz() {
     btn.textContent = opt;
     btn.onclick = () => {
       if (opt === q.answer) {
+        btn.classList.add("correct");
         correctCount++;
-        renderQuiz();
+        setTimeout(() => {
+          currentQuestion++;
+          renderQuiz();
+        }, 1000);
       } else {
+        btn.classList.add("incorrect");
         incorrectCount++;
         alert(`❌ Sbagliato! ${q.explanation}`);
-        renderQuiz();
+        setTimeout(() => {
+          currentQuestion++;
+          renderQuiz();
+        }, 1000);
       }
     };
     container.appendChild(btn);
   });
 }
 
-document.getElementById("next-btn").onclick = renderQuiz;
-
 window.onload = () => {
   const statsDiv = document.createElement("div");
   statsDiv.id = "stats";
   statsDiv.style.marginBottom = "20px";
   document.getElementById("quiz-card").prepend(statsDiv);
-  renderQuiz();
+  document.getElementById("quiz-card").style.display = "none";
+  document.getElementById("end-screen").style.display = "none";
 };

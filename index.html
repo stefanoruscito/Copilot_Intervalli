@@ -2,20 +2,26 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-musicale-glossy-180.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎵 Quiz Scale Maggiori</title>
-  <link rel="manifest" href="manifest.json" />
+  <title>🎶 Quiz Intervalli e Scale</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="app-container">
-    <h1>🎵 Quiz sulle scale maggiori</h1>
-    <div id="quiz-card">
-      <div id="quiz-container"></div>
-      <button id="next-btn">Domanda successiva</button>
+    <h1>🎶 Quiz Intervalli e Scale</h1>
+
+    <div id="start-screen">
+      <h2>Benvenuto!</h2>
+      <button onclick="startQuiz()">Inizia il Quiz</button>
     </div>
+
+    <div id="quiz-card">
+      <div id="stats"></div>
+      <div id="quiz-container"></div>
+    </div>
+
+    <div id="end-screen"></div>
   </div>
   <script src="app.js"></script>
 </body>
